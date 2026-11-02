@@ -7,11 +7,15 @@ let users = JSON.parse(localStorage.getItem('users')) || [
     { username: 'محمد', password: 'mm-123', role: 'admin', avatar: '' }
 ];
 
+// قائمة المنتجات الثابتة الموحدة (لكي تظهر لجميع الزبائن والعملاء عبر الإنترنت فوراً)
 let defaultInventory = [
     { id: 1, name: 'قلم حبر جاف', price: 15, currency: 'YER', stock: 50, desc: 'قلم كتابة سلس للاستخدام اليومي.', image: 'https://images.unsplash.com/photo-1583485088034-697b5bc54ccd?w=500&auto=format&fit=crop&q=60' },
-    { id: 2, name: 'دفتر مذكرات أنيق', price: 50, currency: 'YER', stock: 30, desc: 'دفتر ملاحظات بغلاف أنيق ومتين.', image: 'https://images.unsplash.com/photo-1544816155-12df9643f363?w=500&auto=format&fit=crop&q=60' }
+    { id: 2, name: 'دفتر مذكرات أنيق', price: 50, currency: 'YER', stock: 30, desc: 'دفتر ملاحظات بغلاف أنيق ومتين.', image: 'https://images.unsplash.com/photo-1544816155-12df9643f363?w=500&auto=format&fit=crop&q=60' },
+    { id: 3, name: 'سماعات بلوتوث لاسلكية', price: 350, currency: 'YER', stock: 20, desc: 'سماعات عالية الصفاة وعملية.', image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&auto=format&fit=crop&q=60' },
+    { id: 4, name: 'ساعة ذكية رياضية', price: 600, currency: 'YER', stock: 15, desc: 'ساعة ذكية بتصميم رياضي جذاب.', image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500&auto=format&fit=crop&q=60' }
 ];
 
+// دمج المخزون لضمان ظهور المنتجات للعملاء أونلاين ودعم التعديل المحلي للمدير
 let inventory = JSON.parse(localStorage.getItem('pos_inventory'));
 if (!inventory || inventory.length === 0) {
     inventory = defaultInventory;
@@ -198,22 +202,19 @@ function deleteProduct(index) {
     }
 }
 
-// --- واجهة المتجر الإلكتروني للزبائن (محدثة لضمان العرض التلقائي) ---
+// --- واجهة المتجر الإلكتروني للزبائن (تعرض المنتجات الافتراضية للجميع عبر الإنترنت) ---
 function renderStoreProducts() {
-    // دعم كلا الاحتمالين لمعرفات وعناصر العرض في الـ HTML
     let grid = document.getElementById('storeProductsGrid');
     if (!grid) {
         grid = document.querySelector('.products-container') || document.querySelector('main');
     }
     if (!grid) return;
 
-    grid.innerHTML = "";
-    if (inventory.length === 0) {
-        grid.innerHTML = `<p style="color:var(--text-muted); text-align:center; grid-column:1/-1;">لا توجد منتجات متاحة حالياً</p>`;
-        return;
-    }
+    // دمج المخزون المحلي مع القائمة الثابتة لضمان ظهورها لأي زيارة خارجية أونلاين
+    let displayList = (inventory && inventory.length > 0) ? inventory : defaultInventory;
 
-    inventory.forEach(product => {
+    grid.innerHTML = "";
+    displayList.forEach(product => {
         const card = document.createElement('div');
         card.className = `product-card ${product.stock === 0 ? 'out-of-stock' : ''}`;
         card.style.cssText = "background: #1e293b; padding: 12px; border-radius: 8px; margin-bottom: 10px; color: #fff; text-align: center;";
@@ -234,7 +235,8 @@ function renderStoreProducts() {
 }
 
 function addToStoreCart(productId) {
-    const product = inventory.find(p => p.id === productId);
+    let displayList = (inventory && inventory.length > 0) ? inventory : defaultInventory;
+    const product = displayList.find(p => p.id === productId);
     if (!product || product.stock <= 0) return;
     const cartItem = cart.find(item => item.id === productId);
     if (cartItem) {
@@ -287,7 +289,7 @@ function updateCartTotals(subTotal) {
     if (grandTotalEl) grandTotalEl.textContent = grandTotal.toFixed(2);
 }
 
-// --- إرسال الطلب عبر الواتساب ---
+// --- إرسال الطلب عبر الواتساب للرقم 967780445044 ---
 function submitOnlineOrder() {
     const name = document.getElementById('clientName').value.trim();
     const phone = document.getElementById('clientPhone').value.trim();
@@ -320,7 +322,11 @@ function submitOnlineOrder() {
     orderText += `👤 *الاسم:* ${name}%0A`;
     orderText += `📞 *الهاتف:* ${phone}%0A`;
     orderText += `📍 *العنوان:* ${address}%0A`;
-    orderText += `💰 *الإجمالي:* ${grandTotal.toFixed(2)} YER%0A`;
+    orderText += `--- *المنتجات المطلوبة* ---%0A`;
+    cart.forEach(item => {
+        orderText += `▪️ ${item.name} (${item.qty}x) - ${item.price * item.qty} ${item.currency}%0A`;
+    });
+    orderText += `💰 *الإجمالي النهائي (شامل الضريبة):* ${grandTotal.toFixed(2)} YER%0A`;
 
     const adminWhatsAppNumber = "967780445044";
     const whatsappURL = `https://wa.me/${adminWhatsAppNumber}?text=${orderText}`;
@@ -330,7 +336,7 @@ function submitOnlineOrder() {
     renderStoreCart();
     renderStoreProducts();
 
-    alert(`🎉 شكراً لك يا ${name}! تم حفظ طلبك بنجاح، سيتم تحويلك الآن للواتساب.`);
+    alert(`🎉 شكراً لك يا ${name}! تم حفظ طلبك بنجاح، سيتم تحويلك الآن للواتساب لإرساله للمدير.`);
     window.open(whatsappURL, '_blank');
 }
 
