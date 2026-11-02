@@ -7,11 +7,16 @@ let users = JSON.parse(localStorage.getItem('users')) || [
     { username: 'محمد', password: 'mm-123', role: 'admin', avatar: '' }
 ];
 
-let inventory = JSON.parse(localStorage.getItem('pos_inventory')) || [
+// قائمة المنتجات الافتراضية الأساسية لضمان ظهورها للعملاء عبر الإنترنت فوراً
+let defaultInventory = [
     { id: 1, name: 'قلم حبر جاف', price: 15, currency: 'YER', stock: 50, desc: 'قلم كتابة سلس للاستخدام اليومي.', image: 'https://images.unsplash.com/photo-1583485088034-697b5bc54ccd?w=500&auto=format&fit=crop&q=60' },
     { id: 2, name: 'دفتر مذكرات أنيق', price: 50, currency: 'YER', stock: 30, desc: 'دفتر ملاحظات بغلاف أنيق ومتين.', image: 'https://images.unsplash.com/photo-1544816155-12df9643f363?w=500&auto=format&fit=crop&q=60' },
-    { id: 3, name: 'سماعات بلوتوث لاسلكية', price: 350, currency: 'YER', stock: 20, desc: 'سماعات عالية الصفاة وعملية.', image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&auto=format&fit=crop&q=60' }
+    { id: 3, name: 'سماعات بلوتوث لاسلكية', price: 350, currency: 'YER', stock: 20, desc: 'سماعات عالية الصفاة وعملية.', image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&auto=format&fit=crop&q=60' },
+    { id: 4, name: 'ساعة ذكية رياضية', price: 600, currency: 'YER', stock: 15, desc: 'ساعة ذكية بتصميم رياضي جذاب.', image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500&auto=format&fit=crop&q=60' }
 ];
+
+let storedInventory = JSON.parse(localStorage.getItem('pos_inventory'));
+let inventory = (storedInventory && storedInventory.length > 0) ? storedInventory : defaultInventory;
 
 let cart = JSON.parse(localStorage.getItem('store_cart')) || [];
 let storeOrders = JSON.parse(localStorage.getItem('store_orders')) || [];
@@ -65,7 +70,7 @@ function logoutSystem() {
     window.location.href = 'login.html';
 }
 
-// --- إدارة المستخدمين والصلاحيات (إضافة، تعديل، حذف) ---
+// --- إدارة المستخدمين والصلاحيات ---
 function addNewSystemUser() {
     if (!currentUser || currentUser.role !== 'admin') { alert('عذراً، هذه الصلاحية للمدير العام فقط!'); return; }
     const username = document.getElementById('newUsernameInput').value.trim();
@@ -88,7 +93,6 @@ function renderSystemUsersTable() {
     if (!tbody) return;
     tbody.innerHTML = "";
     users.forEach((u, index) => {
-        let roleName = u.role === 'admin' ? 'مدير عام 🛡️' : 'موظف / كاشير ⚡';
         tbody.innerHTML += `
             <tr>
                 <td><b>${u.username}</b></td>
@@ -120,7 +124,7 @@ function deleteSystemUser(index) {
     }
 }
 
-// --- إدارة المنتجات (إضافة، تعديل، حذف) ---
+// --- إدارة المنتجات ---
 function addNewProduct() {
     if (!currentUser || currentUser.role !== 'admin') { alert('عذراً، إضافة المنتجات مقتصرة على المدير العام فقط!'); return; }
     const name = document.getElementById('newProdName').value.trim();
@@ -132,7 +136,7 @@ function addNewProduct() {
 
     if (!name || isNaN(price) || isNaN(stock)) { alert('الرجاء إدخال بيانات المنتج الأساسية!'); return; }
 
-    let imageSrc = 'https://via.placeholder.com/150';
+    let imageSrc = 'https://images.unsplash.com/photo-1583485088034-697b5bc54ccd?w=500&auto=format&fit=crop&q=60';
     if (imageInput && imageInput.files && imageInput.files[0]) {
         const reader = new FileReader();
         reader.onload = function(e) {
@@ -191,7 +195,7 @@ function deleteProduct(index) {
     }
 }
 
-// --- واجهة المتجر الإلكتروني للزبائن ---
+// --- واجهة المتجر الإلكتروني للزبائن (الهاتف والجوال) ---
 function renderStoreProducts() {
     const grid = document.getElementById('storeProductsGrid');
     if (!grid) return;
@@ -201,7 +205,7 @@ function renderStoreProducts() {
         card.className = `product-card ${product.stock === 0 ? 'out-of-stock' : ''}`;
         card.innerHTML = `
             <div style="width:100%; height:120px; overflow:hidden; border-radius:6px; margin-bottom:8px; background:#111;">
-                <img src="${product.image || 'https://via.placeholder.com/150'}" alt="${product.name}" style="width:100%; height:100%; object-fit:cover;">
+                <img src="${product.image || 'https://images.unsplash.com/photo-1583485088034-697b5bc54ccd?w=500&auto=format&fit=crop&q=60'}" alt="${product.name}" style="width:100%; height:100%; object-fit:cover;">
             </div>
             <h4 style="font-size: 13px; margin-bottom: 4px;">${product.name}</h4>
             <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 6px;">${product.desc || ''}</p>
@@ -266,7 +270,7 @@ function updateCartTotals(subTotal) {
     document.getElementById('cartGrandTotal').textContent = grandTotal.toFixed(2);
 }
 
-// --- إرسال الطلب وحفظه محلياً أو عبر الواتساب للرقم 780445044 ---
+// --- إرسال الطلب عبر الواتساب (للجوال) ---
 function submitOnlineOrder() {
     const name = document.getElementById('clientName').value.trim();
     const phone = document.getElementById('clientPhone').value.trim();
@@ -309,7 +313,7 @@ function submitOnlineOrder() {
     renderStoreCart();
     renderStoreProducts();
 
-    alert(`🎉 شكراً لك يا ${name}! تم حفظ طلبك بنجاح. سيتم تحويلك للواتساب لإرساله للمدير.`);
+    alert(`🎉 شكراً لك يا ${name}! تم حفظ طلبك بنجاح، سيتم تحويلك الآن للواتساب.`);
     window.open(whatsappURL, '_blank');
 }
 
