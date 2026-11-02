@@ -8,8 +8,9 @@ let users = JSON.parse(localStorage.getItem('users')) || [
 ];
 
 let inventory = JSON.parse(localStorage.getItem('pos_inventory')) || [
-    { id: 1, name: 'قلم حبر جاف', price: 15, currency: 'YER', stock: 50, desc: 'قلم كتابة سلس للاستخدام اليومي.', image: 'https://via.placeholder.com/150' },
-    { id: 2, name: 'دفتر مذكرات', price: 50, currency: 'YER', stock: 30, desc: 'دفتر ملاحظات بغلاف أنيق ومتين.', image: 'https://via.placeholder.com/150' }
+    { id: 1, name: 'قلم حبر جاف', price: 15, currency: 'YER', stock: 50, desc: 'قلم كتابة سلس للاستخدام اليومي.', image: 'https://images.unsplash.com/photo-1583485088034-697b5bc54ccd?w=500&auto=format&fit=crop&q=60' },
+    { id: 2, name: 'دفتر مذكرات أنيق', price: 50, currency: 'YER', stock: 30, desc: 'دفتر ملاحظات بغلاف أنيق ومتين.', image: 'https://images.unsplash.com/photo-1544816155-12df9643f363?w=500&auto=format&fit=crop&q=60' },
+    { id: 3, name: 'سماعات بلوتوث لاسلكية', price: 350, currency: 'YER', stock: 20, desc: 'سماعات عالية الصفاة وعملية.', image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&auto=format&fit=crop&q=60' }
 ];
 
 let cart = JSON.parse(localStorage.getItem('store_cart')) || [];
@@ -300,7 +301,6 @@ function submitOnlineOrder() {
     orderText += `📍 *العنوان:* ${address}%0A`;
     orderText += `💰 *الإجمالي:* ${grandTotal.toFixed(2)} YER%0A`;
 
-    // توجيه الطلب إلى رقم الواتساب المطلوب: 780445044 (مع كود اليمن 967)
     const adminWhatsAppNumber = "967780445044";
     const whatsappURL = `https://wa.me/${adminWhatsAppNumber}?text=${orderText}`;
 
@@ -309,7 +309,7 @@ function submitOnlineOrder() {
     renderStoreCart();
     renderStoreProducts();
 
-    alert(`🎉 شكراً لك يا ${name}! تم حفظ طلبك بنجاح. (إذا توفر إنترنت، سيتم تحويلك للواتساب لإرساله للمدير).`);
+    alert(`🎉 شكراً لك يا ${name}! تم حفظ طلبك بنجاح. سيتم تحويلك للواتساب لإرساله للمدير.`);
     window.open(whatsappURL, '_blank');
 }
 
