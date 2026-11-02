@@ -7,16 +7,16 @@ let users = JSON.parse(localStorage.getItem('users')) || [
     { username: 'محمد', password: 'mm-123', role: 'admin', avatar: '' }
 ];
 
-// قائمة المنتجات الافتراضية الأساسية لضمان ظهورها للعملاء عبر الإنترنت فوراً
 let defaultInventory = [
     { id: 1, name: 'قلم حبر جاف', price: 15, currency: 'YER', stock: 50, desc: 'قلم كتابة سلس للاستخدام اليومي.', image: 'https://images.unsplash.com/photo-1583485088034-697b5bc54ccd?w=500&auto=format&fit=crop&q=60' },
-    { id: 2, name: 'دفتر مذكرات أنيق', price: 50, currency: 'YER', stock: 30, desc: 'دفتر ملاحظات بغلاف أنيق ومتين.', image: 'https://images.unsplash.com/photo-1544816155-12df9643f363?w=500&auto=format&fit=crop&q=60' },
-    { id: 3, name: 'سماعات بلوتوث لاسلكية', price: 350, currency: 'YER', stock: 20, desc: 'سماعات عالية الصفاة وعملية.', image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&auto=format&fit=crop&q=60' },
-    { id: 4, name: 'ساعة ذكية رياضية', price: 600, currency: 'YER', stock: 15, desc: 'ساعة ذكية بتصميم رياضي جذاب.', image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500&auto=format&fit=crop&q=60' }
+    { id: 2, name: 'دفتر مذكرات أنيق', price: 50, currency: 'YER', stock: 30, desc: 'دفتر ملاحظات بغلاف أنيق ومتين.', image: 'https://images.unsplash.com/photo-1544816155-12df9643f363?w=500&auto=format&fit=crop&q=60' }
 ];
 
-let storedInventory = JSON.parse(localStorage.getItem('pos_inventory'));
-let inventory = (storedInventory && storedInventory.length > 0) ? storedInventory : defaultInventory;
+let inventory = JSON.parse(localStorage.getItem('pos_inventory'));
+if (!inventory || inventory.length === 0) {
+    inventory = defaultInventory;
+    localStorage.setItem('pos_inventory', JSON.stringify(inventory));
+}
 
 let cart = JSON.parse(localStorage.getItem('store_cart')) || [];
 let storeOrders = JSON.parse(localStorage.getItem('store_orders')) || [];
@@ -39,7 +39,7 @@ document.addEventListener('DOMContentLoaded', () => {
         renderAdminOrders();
         const cashierNameSpan = document.getElementById('currentCashierName');
         if (cashierNameSpan) cashierNameSpan.textContent = currentUser.username;
-    } else if (currentPage === 'store.html') {
+    } else if (currentPage === 'store.html' || currentPage === '') {
         renderStoreProducts();
         renderStoreCart();
     }
@@ -153,6 +153,7 @@ function saveProductData(name, price, currency, stock, desc, image) {
     inventory.push({ id: newId, name, price, currency, stock, desc, image });
     localStorage.setItem('pos_inventory', JSON.stringify(inventory));
     renderAdminInventory();
+    renderStoreProducts();
     alert('✅ تم إضافة المنتج ونشره في المتجر بنجاح.');
 }
 
@@ -183,6 +184,7 @@ function updateProduct(index) {
     inventory[index].stock = parseInt(document.getElementById(`edit_stock_${index}`).value);
     localStorage.setItem('pos_inventory', JSON.stringify(inventory));
     renderAdminInventory();
+    renderStoreProducts();
     alert('✅ تم تحديث بيانات المنتج بنجاح.');
 }
 
@@ -192,26 +194,38 @@ function deleteProduct(index) {
         inventory.splice(index, 1);
         localStorage.setItem('pos_inventory', JSON.stringify(inventory));
         renderAdminInventory();
+        renderStoreProducts();
     }
 }
 
-// --- واجهة المتجر الإلكتروني للزبائن (الهاتف والجوال) ---
+// --- واجهة المتجر الإلكتروني للزبائن (محدثة لضمان العرض التلقائي) ---
 function renderStoreProducts() {
-    const grid = document.getElementById('storeProductsGrid');
+    // دعم كلا الاحتمالين لمعرفات وعناصر العرض في الـ HTML
+    let grid = document.getElementById('storeProductsGrid');
+    if (!grid) {
+        grid = document.querySelector('.products-container') || document.querySelector('main');
+    }
     if (!grid) return;
+
     grid.innerHTML = "";
+    if (inventory.length === 0) {
+        grid.innerHTML = `<p style="color:var(--text-muted); text-align:center; grid-column:1/-1;">لا توجد منتجات متاحة حالياً</p>`;
+        return;
+    }
+
     inventory.forEach(product => {
         const card = document.createElement('div');
         card.className = `product-card ${product.stock === 0 ? 'out-of-stock' : ''}`;
+        card.style.cssText = "background: #1e293b; padding: 12px; border-radius: 8px; margin-bottom: 10px; color: #fff; text-align: center;";
         card.innerHTML = `
-            <div style="width:100%; height:120px; overflow:hidden; border-radius:6px; margin-bottom:8px; background:#111;">
-                <img src="${product.image || 'https://images.unsplash.com/photo-1583485088034-697b5bc54ccd?w=500&auto=format&fit=crop&q=60'}" alt="${product.name}" style="width:100%; height:100%; object-fit:cover;">
+            <div style="width:100%; height:110px; overflow:hidden; border-radius:6px; margin-bottom:8px; background:#111;">
+                <img src="${product.image || 'https://via.placeholder.com/150'}" alt="${product.name}" style="width:100%; height:100%; object-fit:cover;">
             </div>
-            <h4 style="font-size: 13px; margin-bottom: 4px;">${product.name}</h4>
-            <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 6px;">${product.desc || ''}</p>
-            <p class="price" style="color:var(--primary-gold); font-weight:bold; font-size:13px; margin-bottom:6px;">${product.price} ${product.currency}</p>
-            <p style="font-size: 11px; color:${product.stock > 0 ? 'var(--text-muted)' : '#ef4444'}; margin-bottom:8px;">المتوفر: <b>${product.stock}</b></p>
-            <button onclick="addToStoreCart(${product.id})" style="width:100%; padding:6px; background:${product.stock > 0 ? 'var(--primary-gold)' : '#444'}; color:#000; border:none; border-radius:4px; font-weight:bold; cursor:${product.stock > 0 ? 'pointer' : 'not-allowed'};" ${product.stock === 0 ? 'disabled' : ''}>
+            <h4 style="font-size: 14px; margin-bottom: 4px;">${product.name}</h4>
+            <p style="font-size: 11px; color: #94a3b8; margin-bottom: 6px;">${product.desc || ''}</p>
+            <p class="price" style="color:#fbbf24; font-weight:bold; font-size:13px; margin-bottom:6px;">${product.price} ${product.currency || 'YER'}</p>
+            <p style="font-size: 11px; color:${product.stock > 0 ? '#94a3b8' : '#ef4444'}; margin-bottom:8px;">المتوفر: <b>${product.stock}</b></p>
+            <button onclick="addToStoreCart(${product.id})" style="width:100%; padding:6px; background:${product.stock > 0 ? '#fbbf24' : '#444'}; color:#000; border:none; border-radius:4px; font-weight:bold; cursor:${product.stock > 0 ? 'pointer' : 'not-allowed'};" ${product.stock === 0 ? 'disabled' : ''}>
                 ${product.stock > 0 ? 'إضافة للسلة 🛒' : 'نفذت الكمية ❌'}
             </button>
         `;
@@ -227,7 +241,7 @@ function addToStoreCart(productId) {
         if (cartItem.qty < product.stock) cartItem.qty += 1;
         else { alert('الحد الأقصى للمخزون!'); return; }
     } else {
-        cart.push({ id: product.id, name: product.name, price: product.price, currency: product.currency, qty: 1 });
+        cart.push({ id: product.id, name: product.name, price: product.price, currency: product.currency || 'YER', qty: 1 });
     }
     localStorage.setItem('store_cart', JSON.stringify(cart));
     renderStoreCart();
@@ -265,12 +279,15 @@ function removeFromStoreCart(index) {
 function updateCartTotals(subTotal) {
     let tax = subTotal * 0.15;
     let grandTotal = subTotal + tax;
-    document.getElementById('cartSubTotal').textContent = subTotal.toFixed(2);
-    document.getElementById('cartTax').textContent = tax.toFixed(2);
-    document.getElementById('cartGrandTotal').textContent = grandTotal.toFixed(2);
+    const subTotalEl = document.getElementById('cartSubTotal');
+    const taxEl = document.getElementById('cartTax');
+    const grandTotalEl = document.getElementById('cartGrandTotal');
+    if (subTotalEl) subTotalEl.textContent = subTotal.toFixed(2);
+    if (taxEl) taxEl.textContent = tax.toFixed(2);
+    if (grandTotalEl) grandTotalEl.textContent = grandTotal.toFixed(2);
 }
 
-// --- إرسال الطلب عبر الواتساب (للجوال) ---
+// --- إرسال الطلب عبر الواتساب ---
 function submitOnlineOrder() {
     const name = document.getElementById('clientName').value.trim();
     const phone = document.getElementById('clientPhone').value.trim();
